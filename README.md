@@ -6,7 +6,7 @@ HOW TO RUN IT
   (Edge, Chrome, Firefox, etc.) and works fully offline. No installation needed.
  
 HOW TO PLAY
-- Each day, open index.html and click "Roll for today" ONCE. This is on the
+- Each day, open Chastity Game.html and click "Roll for today" ONCE. This is on the
   honor system. The app does not check real calendar dates, it only counts clicks.
 - Day 1 starts as a d8. The die gains one face every day, FOREVER. This
   never stops or freezes (day 2 = d9, day 3 = d10, and so on indefinitely).
