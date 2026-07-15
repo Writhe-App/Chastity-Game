@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Daily Odds Game - d8, Monthly Dice Freeze at 3mo</title>
+<title>Daily Odds Game - d20, Monthly Dice Freeze at 3mo</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -89,9 +89,9 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Daily Odds Game &mdash; d8, Dice Freeze at 3mo</h1>
+  <h1>Daily Odds Game &mdash; d20, Dice Freeze at 3mo (Extreme)</h1>
   <p class="sub">
-    Day 1 = d8, and the die gains one face every day, forever &mdash; that never stops. You start with 1 die, and one more die is added every month (day 31 &rarr; 2 dice, day 61 &rarr; 3 dice) &mdash; but the dice count STOPS increasing after 3 months (day 91 onward stays frozen at 3 dice, no matter how long the game runs).
+    Day 1 = d20 (brutal up front), and the die gains one face every day, forever &mdash; that never stops. You start with 1 die, and one more die is added every month (day 31 &rarr; 2 dice, day 61 &rarr; 3 dice) &mdash; but the dice count STOPS increasing after 3 months (day 91 onward stays frozen at 3 dice, no matter how long the game runs).
     Win the instant any roll comes up a 1. No dates are used &mdash; every click of "Roll for today" counts as one day, on the honor system.
   </p>
 
@@ -113,9 +113,9 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'daily-odds-game-d8-freeze-3mo-v1';
+const STORAGE_KEY = 'daily-odds-game-d20-freeze-3mo-v1';
 
-function faceCount(day) { return 7 + day; }
+function faceCount(day) { return 19 + day; }
 function rollsToday(day) {
   const monthsElapsed = Math.floor((day - 1) / 30);
   const cappedMonths = Math.min(monthsElapsed, 2); // freezes after 3 months (2 increases past the base die)
@@ -255,7 +255,7 @@ function renderLog(state) {
     <div class="log-row">
       <span>Day ${entry.day} &middot; d${entry.faces} &times; ${entry.rolls}</span>
       <span>${entry.results.join(', ')}</span>
-      <span class="${entry.win ? 'result-win' : 'result-safe'}">${entry.win ? 'Unlock!' : 'Stay Locked'}</span>
+      <span class="${entry.win ? 'result-win' : 'Stay Locked'}">${entry.win ? 'Hit it!' : 'Unlock'}</span>
     </div>
   `).join('');
 }
