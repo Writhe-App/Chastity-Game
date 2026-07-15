@@ -255,7 +255,7 @@ function renderLog(state) {
     <div class="log-row">
       <span>Day ${entry.day} &middot; d${entry.faces} &times; ${entry.rolls}</span>
       <span>${entry.results.join(', ')}</span>
-      <span class="${entry.win ? 'result-win' : 'Stay Locked'}">${entry.win ? 'Hit it!' : 'Unlock'}</span>
+      <span class="${entry.win ? 'result-win' : 'result-safe'}">${entry.win ? 'Unlock!' : 'Stay Locked'}</span>
     </div>
   `).join('');
 }
