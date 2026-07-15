@@ -1,4 +1,4 @@
-Chastity Game (D8 to Start, Add Die at Month 2 and 3, Die Gains One Face Every Day)
+Chastity Game (D20 to Start, Add Die at Month 2 and 3, Die Gains One Face Every Day)
 ===================================================================================
  
 HOW TO RUN IT
@@ -8,8 +8,8 @@ HOW TO RUN IT
 HOW TO PLAY
 - Each day, open Chastity Game.html and click "Roll for today" ONCE. This is on the
   honor system. The app does not check real calendar dates, it only counts clicks.
-- Day 1 starts as a d8. The die gains one face every day, FOREVER. This
-  never stops or freezes (day 2 = d9, day 3 = d10, and so on indefinitely).
+- Day 1 starts as a d20. The die gains one face every day, FOREVER. This
+  never stops or freezes (day 2 = d20, day 3 = d21, and so on indefinitely).
 - You start with 1 die. One more die is added every month for the first
   3 months: 2 dice starting day 31, 3 dice starting day 61. After that
   (day 91 onward), the dice count is FROZEN at 3. No more dice ever get
