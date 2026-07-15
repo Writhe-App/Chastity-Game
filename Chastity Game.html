@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Odds Game - d8, Monthly Dice Freeze at 3mo</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --card: #f7f7f5;
+    --border: rgba(0,0,0,0.1);
+    --text: #17171a;
+    --text-muted: #6b6b70;
+    --accent: #1baf7a;
+    --accent2: #a855f7;
+    --danger: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17171a;
+      --card: #232326;
+      --border: rgba(255,255,255,0.12);
+      --text: #f2f2f0;
+      --text-muted: #9c9c9f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+  .sub { color: var(--text-muted); font-size: 14px; margin: 0 0 1.5rem; line-height: 1.5; }
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .big-day { font-size: 40px; font-weight: 600; line-height: 1.1; margin: 0; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .label { font-size: 13px; color: var(--text-muted); }
+  .value { font-size: 14px; font-weight: 500; }
+  button {
+    padding: 13px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+    width: 100%;
+  }
+  .roll-btn { background: var(--accent); color: white; }
+  .sim-btn { background: var(--accent2); color: white; }
+  .reset-btn { background: transparent; border: 0.5px solid var(--border); color: var(--text-muted); }
+  .log { max-height: 200px; overflow-y: auto; font-size: 13px; }
+  .log-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border); gap: 8px; }
+  .log-row:last-child { border-bottom: none; }
+  .result-win { color: var(--danger); font-weight: 500; }
+  .result-safe { color: var(--text-muted); }
+  .status-msg { text-align: center; padding: 1.5rem 1rem; }
+  .status-msg .big-day { font-size: 32px; }
+  .tier-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+  .divider { border-top: 0.5px solid var(--border); margin: 1.75rem 0 1rem; }
+  input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 0.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    margin-top: 4px;
+  }
+  #simResults { margin-top: 12px; font-size: 13px; }
+  #simResults .row { margin-top: 3px; }
+  canvas#histCanvas { width: 100%; height: 140px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Daily Odds Game &mdash; d8, Dice Freeze at 3mo</h1>
+  <p class="sub">
+    Day 1 = d8, and the die gains one face every day, forever &mdash; that never stops. You start with 1 die, and one more die is added every month (day 31 &rarr; 2 dice, day 61 &rarr; 3 dice) &mdash; but the dice count STOPS increasing after 3 months (day 91 onward stays frozen at 3 dice, no matter how long the game runs).
+    Win the instant any roll comes up a 1. No dates are used &mdash; every click of "Roll for today" counts as one day, on the honor system.
+  </p>
+
+  <div id="app"></div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <h2>Simulate outcomes</h2>
+    <p class="tier-note" style="margin-top:-6px;margin-bottom:10px;">
+      This is a sandbox &mdash; it does not touch your real game above. Run as many times as you like.
+    </p>
+    <label class="label" for="trialsInput">Number of simulated games</label>
+    <input type="number" id="trialsInput" value="1000" min="1" max="100000" />
+    <button class="sim-btn" id="simBtn">Run simulation</button>
+    <div id="simResults"></div>
+    <canvas id="histCanvas" width="600" height="140"></canvas>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'daily-odds-game-d8-freeze-3mo-v1';
+
+function faceCount(day) { return 7 + day; }
+function rollsToday(day) {
+  const monthsElapsed = Math.floor((day - 1) / 30);
+  const cappedMonths = Math.min(monthsElapsed, 2); // freezes after 3 months (2 increases past the base die)
+  return 1 + cappedMonths;
+}
+
+function doRoll(day) {
+  const faces = faceCount(day);
+  const rolls = rollsToday(day);
+  const results = [];
+  let win = false;
+  for (let i = 0; i < rolls; i++) {
+    const r = Math.floor(Math.random() * faces) + 1;
+    results.push(r);
+    if (r === 1) win = true;
+  }
+  return { faces, rolls, results, win };
+}
+
+function winChance(day) {
+  const faces = faceCount(day);
+  const rolls = rollsToday(day);
+  return 1 - Math.pow((faces - 1) / faces, rolls);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveState(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('Save failed', e);
+  }
+}
+
+function newGameState() {
+  return { status: 'active', dayCount: 0, log: [] };
+}
+
+function pct(p) { return (p * 100).toFixed(2) + '%'; }
+
+function render() {
+  const app = document.getElementById('app');
+  let state = loadState();
+
+  if (!state) {
+    app.innerHTML = `
+      <div class="card status-msg">
+        <p class="sub" style="margin-bottom:12px;">No game running yet.</p>
+        <button class="roll-btn" id="startBtn">Start a new game</button>
+      </div>
+    `;
+    document.getElementById('startBtn').onclick = () => {
+      saveState(newGameState());
+      render();
+    };
+    return;
+  }
+
+  if (state.status === 'won') {
+    app.innerHTML = `
+      <div class="card status-msg">
+        <p class="label">Game over &mdash; you rolled the 1 on</p>
+        <p class="big-day">day ${state.dayCount}</p>
+        <p class="tier-note">Final die: d${faceCount(state.dayCount)}, ${rollsToday(state.dayCount)} roll(s) that day</p>
+      </div>
+      <button class="reset-btn" id="resetBtn">Start a new game</button>
+      <div class="card" style="margin-top:1rem;">
+        <div class="row" style="margin-bottom:8px;"><span class="label">Full history</span></div>
+        <div class="log" id="logList"></div>
+      </div>
+    `;
+    document.getElementById('resetBtn').onclick = () => {
+      saveState(newGameState());
+      render();
+    };
+    renderLog(state);
+    return;
+  }
+
+  const nextDay = state.dayCount + 1;
+  const faces = faceCount(nextDay);
+  const rolls = rollsToday(nextDay);
+  const chance = winChance(nextDay);
+
+  app.innerHTML = `
+    <div class="card">
+      <p class="label">Currently on</p>
+      <p class="big-day">day ${state.dayCount}</p>
+      <div class="row"><span class="label">Next roll: die size</span><span class="value">d${faces}</span></div>
+      <div class="row"><span class="label">Rolls that day</span><span class="value">${rolls}</span></div>
+      <div class="row"><span class="label">Win chance today</span><span class="value">${pct(chance)}</span></div>
+      <button class="roll-btn" id="rollBtn">Roll for today (day ${nextDay})</button>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px;"><span class="label">Roll history</span></div>
+      <div class="log" id="logList"></div>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset game</button>
+  `;
+
+  document.getElementById('rollBtn').onclick = () => {
+    const day = state.dayCount + 1;
+    const result = doRoll(day);
+    state.dayCount = day;
+    state.log.unshift({ day, faces: result.faces, rolls: result.rolls, results: result.results, win: result.win });
+    if (result.win) state.status = 'won';
+    saveState(state);
+    render();
+  };
+
+  document.getElementById('resetBtn').onclick = () => {
+    if (confirm('This will end the current game and start fresh. Continue?')) {
+      saveState(newGameState());
+      render();
+    }
+  };
+
+  renderLog(state);
+}
+
+function renderLog(state) {
+  const logList = document.getElementById('logList');
+  if (!logList) return;
+  if (state.log.length === 0) {
+    logList.innerHTML = '<p class="tier-note">No rolls yet.</p>';
+    return;
+  }
+  logList.innerHTML = state.log.map(entry => `
+    <div class="log-row">
+      <span>Day ${entry.day} &middot; d${entry.faces} &times; ${entry.rolls}</span>
+      <span>${entry.results.join(', ')}</span>
+      <span class="${entry.win ? 'result-win' : 'result-safe'}">${entry.win ? 'Unlock!' : 'Stay Locked'}</span>
+    </div>
+  `).join('');
+}
+
+// ---------- Simulation sandbox ----------
+
+function simulateOneGame() {
+  let day = 0;
+  while (day < 20000) {
+    day++;
+    const result = doRoll(day);
+    if (result.win) return day;
+  }
+  return day;
+}
+
+function runSimulation(n) {
+  const lengths = [];
+  for (let i = 0; i < n; i++) lengths.push(simulateOneGame());
+  lengths.sort((a, b) => a - b);
+
+  const mean = lengths.reduce((a, b) => a + b, 0) / n;
+  const median = lengths[Math.floor(n / 2)];
+  const within = (d) => (lengths.filter(x => x <= d).length / n) * 100;
+
+  document.getElementById('simResults').innerHTML = `
+    <div class="row"><span class="label">Average day of win</span><span class="value">${mean.toFixed(1)}</span></div>
+    <div class="row"><span class="label">Median day of win</span><span class="value">${median}</span></div>
+    <div class="row"><span class="label">Ended within a week</span><span class="value">${within(7).toFixed(1)}%</span></div>
+    <div class="row"><span class="label">Ended within a month</span><span class="value">${within(30).toFixed(1)}%</span></div>
+    <div class="row"><span class="label">Ended within 3 months</span><span class="value">${within(90).toFixed(1)}%</span></div>
+    <div class="row"><span class="label">Ended within a year</span><span class="value">${within(365).toFixed(1)}%</span></div>
+    <div class="row"><span class="label">Longest simulated game</span><span class="value">${lengths[lengths.length-1]} days</span></div>
+  `;
+
+  drawHistogram(lengths);
+}
+
+function drawHistogram(lengths) {
+  const canvas = document.getElementById('histCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const buckets = [
+    { label: '<7d', test: x => x < 7 },
+    { label: '7-30d', test: x => x >= 7 && x <= 30 },
+    { label: '31-90d', test: x => x >= 31 && x <= 90 },
+    { label: '91-180d', test: x => x >= 91 && x <= 180 },
+    { label: '181-365d', test: x => x >= 181 && x <= 365 },
+    { label: '>1yr', test: x => x > 365 }
+  ];
+  const counts = buckets.map(b => lengths.filter(b.test).length);
+  const maxCount = Math.max(...counts, 1);
+
+  const barW = w / buckets.length;
+  const textColor = getComputedStyle(document.body).getPropertyValue('color') || '#333';
+
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+
+  buckets.forEach((b, i) => {
+    const barH = (counts[i] / maxCount) * (h - 30);
+    const x = i * barW + barW * 0.15;
+    const bw = barW * 0.7;
+    const y = h - 20 - barH;
+    ctx.fillStyle = '#1baf7a';
+    ctx.fillRect(x, y, bw, barH);
+    ctx.fillStyle = textColor;
+    ctx.fillText(counts[i], i * barW + barW / 2, y - 4 < 10 ? 10 : y - 4);
+    ctx.fillText(b.label, i * barW + barW / 2, h - 5);
+  });
+}
+
+document.getElementById('simBtn').addEventListener('click', () => {
+  const n = Math.max(1, Math.min(100000, parseInt(document.getElementById('trialsInput').value) || 1000));
+  runSimulation(n);
+});
+
+render();
+</script>
+</body>
+</html>
