@@ -40,3 +40,10 @@ SIMULATING OUTCOMES
   you like to see how the odds play out across many hypothetical
   games: average/median day of win, chance of ending within a week, month,
   3 months, or a year, plus a simple bar chart of outcomes.
+
+UPDATE:
+Added error handling for those that are using browser that don't let local 
+file / JavaScript execution and will no longer silently fail. Instead of a 
+blank/broken page, they'll now see a clear red-bordered message explaining it 
+needs JS and pointing them to Chrome, Firefox, Samsung Internet, or Edge, with 
+quick Android instructions for opening it that way.
