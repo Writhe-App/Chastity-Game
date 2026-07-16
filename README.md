@@ -1,4 +1,4 @@
-AILY ODDS GAME -- CONFIGURABLE STARTING DIE
+AILY ODDS GAME (CONFIGURABLE STARTING DIE)
 ==============================================
  
 HOW TO RUN IT
@@ -6,7 +6,7 @@ HOW TO RUN IT
   (Edge, Chrome, Firefox, etc.) and works fully offline. No installation needed.
 - If it opens as a blank/broken page, you're likely in a viewer or browser
   that blocks JavaScript on local files (some hardened browsers, or
-  Android "HTML viewer" apps do this) -- try Chrome, Firefox, Samsung
+  Android "HTML viewer" apps do this), try Chrome, Firefox, Samsung
   Internet, or Edge instead.
  
 HOW TO PLAY
@@ -14,14 +14,14 @@ HOW TO PLAY
   into the box, or tap one of the quick preset buttons (d4, d6, d8, d10,
   d12, d20). Defaults to d8 if you don't change it.
 - Each day, open Chastity Game.html and click "Roll for today" ONCE. This is on the
-  honor system -- the app does not check real calendar dates, it only counts clicks.
-- The die gains one face every day, FOREVER -- this never stops or freezes.
+  honor system. The app does not check real calendar dates, it only counts clicks.
+- The die gains one face every day, FOREVER. This never stops or freezes.
 - You start with 1 die. One more die is added every month for the first
   3 months: 2 dice starting day 31, 3 dice starting day 61. After that
-  (day 91 onward), the dice count is FROZEN at 3 -- no more dice ever get
+  (day 91 onward), the dice count is FROZEN at 3. No more dice ever get
   added, no matter how long the game runs. Only the die's face count keeps
   climbing.
-- You win the moment any single roll comes up a 1 -- see "Unlock!" in the
+- You win the moment any single roll comes up a 1, you see "Unlock!" in the
   log. Otherwise it shows "Stay Locked."
 - Click "Start a new game" (or "Reset game") to play again and pick a
   different starting die if you like.
@@ -34,4 +34,4 @@ SIMULATING OUTCOMES
   you like.
  
 Your real, ongoing game's starting die is locked in once you hit "Start a
-new game" -- to try a different size, reset and start fresh.
+new game." To try a different size, reset and start fresh.
