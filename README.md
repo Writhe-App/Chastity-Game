@@ -1,4 +1,4 @@
-AILY ODDS GAME (CONFIGURABLE STARTING DIE)
+DAILY ODDS GAME (CONFIGURABLE STARTING DIE)
 ==============================================
  
 HOW TO RUN IT
