@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Daily Odds Game - d8, Monthly Dice Freeze at 3mo</title>
+<title>Daily Odds Game - Configurable Starting Die</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -82,6 +82,20 @@
     color: var(--text);
     margin-top: 4px;
   }
+  .preset-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .preset-btn {
+    width: auto;
+    flex: 1;
+    min-width: 50px;
+    padding: 8px 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: 0.5px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    margin-top: 0;
+  }
   #simResults { margin-top: 12px; font-size: 13px; }
   #simResults .row { margin-top: 3px; }
   canvas#histCanvas { width: 100%; height: 140px; margin-top: 10px; }
@@ -100,10 +114,13 @@
   </div>
 </noscript>
 <div class="wrap">
-  <h1>Daily Odds Game &mdash; d8, Dice Freeze at 3mo</h1>
+  <h1>Daily Odds Game &mdash; Configurable Starting Die</h1>
   <p class="sub">
-    Day 1 = d8, and the die gains one face every day, forever &mdash; that never stops. You start with 1 die, and one more die is added every month (day 31 &rarr; 2 dice, day 61 &rarr; 3 dice) &mdash; but the dice count STOPS increasing after 3 months (day 91 onward stays frozen at 3 dice, no matter how long the game runs).
-    Win the instant any roll comes up a 1. No dates are used &mdash; every click of "Roll for today" counts as one day, on the honor system.
+    Choose your starting die (default d8). The die gains one face every day, forever &mdash; that never stops.
+    You start with 1 die, and one more die is added every month (day 31 &rarr; 2 dice, day 61 &rarr; 3 dice) &mdash;
+    but the dice count STOPS increasing after 3 months (day 91 onward stays frozen at 3 dice, no matter how long
+    the game runs). Win the instant any roll comes up a 1. No dates are used &mdash; every click of "Roll for today"
+    counts as one day, on the honor system.
   </p>
 
   <div id="app"></div>
@@ -115,7 +132,9 @@
     <p class="tier-note" style="margin-top:-6px;margin-bottom:10px;">
       This is a sandbox &mdash; it does not touch your real game above. Run as many times as you like.
     </p>
-    <label class="label" for="trialsInput">Number of simulated games</label>
+    <label class="label" for="simSidesInput">Starting die (sides) for this simulation</label>
+    <input type="number" id="simSidesInput" value="8" min="2" max="1000" />
+    <label class="label" for="trialsInput" style="display:block;margin-top:10px;">Number of simulated games</label>
     <input type="number" id="trialsInput" value="1000" min="1" max="100000" />
     <button class="sim-btn" id="simBtn">Run simulation</button>
     <div id="simResults"></div>
@@ -124,17 +143,18 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'daily-odds-game-d8-freeze-3mo-v1';
+const STORAGE_KEY = 'daily-odds-game-configurable-die-v1';
+const DICE_PRESETS = [4, 6, 8, 10, 12, 20];
 
-function faceCount(day) { return 7 + day; }
+function faceCount(day, startingSides) { return (startingSides - 1) + day; }
 function rollsToday(day) {
   const monthsElapsed = Math.floor((day - 1) / 30);
-  const cappedMonths = Math.min(monthsElapsed, 2); // freezes after 3 months (2 increases past the base die)
+  const cappedMonths = Math.min(monthsElapsed, 2); // freezes after 3 months
   return 1 + cappedMonths;
 }
 
-function doRoll(day) {
-  const faces = faceCount(day);
+function doRoll(day, startingSides) {
+  const faces = faceCount(day, startingSides);
   const rolls = rollsToday(day);
   const results = [];
   let win = false;
@@ -146,8 +166,8 @@ function doRoll(day) {
   return { faces, rolls, results, win };
 }
 
-function winChance(day) {
-  const faces = faceCount(day);
+function winChance(day, startingSides) {
+  const faces = faceCount(day, startingSides);
   const rolls = rollsToday(day);
   return 1 - Math.pow((faces - 1) / faces, rolls);
 }
@@ -169,8 +189,8 @@ function saveState(state) {
   }
 }
 
-function newGameState() {
-  return { status: 'active', dayCount: 0, log: [] };
+function newGameState(startingSides) {
+  return { status: 'active', dayCount: 0, log: [], startingSides: startingSides };
 }
 
 function pct(p) { return (p * 100).toFixed(2) + '%'; }
@@ -182,23 +202,36 @@ function render() {
   if (!state) {
     app.innerHTML = `
       <div class="card status-msg">
-        <p class="sub" style="margin-bottom:12px;">No game running yet.</p>
+        <p class="sub" style="margin-bottom:6px;">No game running yet.</p>
+        <label class="label" for="startSidesInput">Starting die (sides)</label>
+        <input type="number" id="startSidesInput" value="8" min="2" max="1000" />
+        <div class="preset-row">
+          ${DICE_PRESETS.map(n => `<button class="preset-btn" data-sides="${n}">d${n}</button>`).join('')}
+        </div>
         <button class="roll-btn" id="startBtn">Start a new game</button>
       </div>
     `;
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.getElementById('startSidesInput').value = btn.dataset.sides;
+      };
+    });
     document.getElementById('startBtn').onclick = () => {
-      saveState(newGameState());
+      const sides = Math.max(2, Math.min(1000, parseInt(document.getElementById('startSidesInput').value) || 8));
+      saveState(newGameState(sides));
       render();
     };
     return;
   }
+
+  const sides = state.startingSides || 8;
 
   if (state.status === 'won') {
     app.innerHTML = `
       <div class="card status-msg">
         <p class="label">Game over &mdash; you rolled the 1 on</p>
         <p class="big-day">day ${state.dayCount}</p>
-        <p class="tier-note">Final die: d${faceCount(state.dayCount)}, ${rollsToday(state.dayCount)} roll(s) that day</p>
+        <p class="tier-note">Started at d${sides} &middot; final die: d${faceCount(state.dayCount, sides)}, ${rollsToday(state.dayCount)} roll(s) that day</p>
       </div>
       <button class="reset-btn" id="resetBtn">Start a new game</button>
       <div class="card" style="margin-top:1rem;">
@@ -207,7 +240,7 @@ function render() {
       </div>
     `;
     document.getElementById('resetBtn').onclick = () => {
-      saveState(newGameState());
+      localStorage.removeItem(STORAGE_KEY);
       render();
     };
     renderLog(state);
@@ -215,16 +248,17 @@ function render() {
   }
 
   const nextDay = state.dayCount + 1;
-  const faces = faceCount(nextDay);
+  const faces = faceCount(nextDay, sides);
   const rolls = rollsToday(nextDay);
-  const chance = winChance(nextDay);
+  const chance = winChance(nextDay, sides);
 
   app.innerHTML = `
     <div class="card">
       <p class="label">Currently on</p>
       <p class="big-day">day ${state.dayCount}</p>
+      <div class="row"><span class="label">Started at</span><span class="value">d${sides}</span></div>
       <div class="row"><span class="label">Next roll: die size</span><span class="value">d${faces}</span></div>
-      <div class="row"><span class="label">Rolls that day</span><span class="value">${rolls}</span></div>
+      <div class="row"><span class="label">Rolls that day</span><span class="value">${rolls}${rolls >= 3 ? ' (frozen)' : ''}</span></div>
       <div class="row"><span class="label">Win chance today</span><span class="value">${pct(chance)}</span></div>
       <button class="roll-btn" id="rollBtn">Roll for today (day ${nextDay})</button>
     </div>
@@ -237,7 +271,7 @@ function render() {
 
   document.getElementById('rollBtn').onclick = () => {
     const day = state.dayCount + 1;
-    const result = doRoll(day);
+    const result = doRoll(day, sides);
     state.dayCount = day;
     state.log.unshift({ day, faces: result.faces, rolls: result.rolls, results: result.results, win: result.win });
     if (result.win) state.status = 'won';
@@ -246,8 +280,8 @@ function render() {
   };
 
   document.getElementById('resetBtn').onclick = () => {
-    if (confirm('This will end the current game and start fresh. Continue?')) {
-      saveState(newGameState());
+    if (confirm('This will end the current game and start fresh (you can pick a new starting die). Continue?')) {
+      localStorage.removeItem(STORAGE_KEY);
       render();
     }
   };
@@ -273,19 +307,19 @@ function renderLog(state) {
 
 // ---------- Simulation sandbox ----------
 
-function simulateOneGame() {
+function simulateOneGame(startingSides) {
   let day = 0;
   while (day < 20000) {
     day++;
-    const result = doRoll(day);
+    const result = doRoll(day, startingSides);
     if (result.win) return day;
   }
   return day;
 }
 
-function runSimulation(n) {
+function runSimulation(n, startingSides) {
   const lengths = [];
-  for (let i = 0; i < n; i++) lengths.push(simulateOneGame());
+  for (let i = 0; i < n; i++) lengths.push(simulateOneGame(startingSides));
   lengths.sort((a, b) => a - b);
 
   const mean = lengths.reduce((a, b) => a + b, 0) / n;
@@ -293,6 +327,7 @@ function runSimulation(n) {
   const within = (d) => (lengths.filter(x => x <= d).length / n) * 100;
 
   document.getElementById('simResults').innerHTML = `
+    <div class="row"><span class="label">Starting die</span><span class="value">d${startingSides}</span></div>
     <div class="row"><span class="label">Average day of win</span><span class="value">${mean.toFixed(1)}</span></div>
     <div class="row"><span class="label">Median day of win</span><span class="value">${median}</span></div>
     <div class="row"><span class="label">Ended within a week</span><span class="value">${within(7).toFixed(1)}%</span></div>
@@ -343,7 +378,8 @@ function drawHistogram(lengths) {
 
 document.getElementById('simBtn').addEventListener('click', () => {
   const n = Math.max(1, Math.min(100000, parseInt(document.getElementById('trialsInput').value) || 1000));
-  runSimulation(n);
+  const sides = Math.max(2, Math.min(1000, parseInt(document.getElementById('simSidesInput').value) || 8));
+  runSimulation(n, sides);
 });
 
 render();
